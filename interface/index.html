@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080d18">
+  <title>ANOS OMNI — RSAK LAB</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #080d18;
+      color: #e8edf7;
+      font-family: Arial, sans-serif;
+    }
+    main { max-width: 1000px; margin: auto; }
+    header { border-bottom: 1px solid #26334a; padding-bottom: 20px; }
+    .tag { color: #58d6c5; font-size: 12px; letter-spacing: 3px; }
+    h1 { font-size: 30px; margin-bottom: 6px; }
+    .subtitle, .muted { color: #91a0b8; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+    .panel {
+      background: #111a2a;
+      border: 1px solid #263650;
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+    h2 { font-size: 17px; margin-top: 0; }
+    .value { font-size: 27px; font-weight: bold; color: #58d6c5; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 5px 5px 5px 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .primary { background: #58d6c5; color: #08121c; }
+    .secondary { background: #263650; color: white; }
+    .danger { background: #743d4c; color: white; }
+    input {
+      background: #080d18;
+      color: white;
+      border: 1px solid #34435c;
+      padding: 11px;
+      border-radius: 7px;
+      width: 100%;
+      margin: 7px 0;
+    }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #b9c9e1;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .status { color: #58d6c5; }
+    footer { margin-top: 30px; color: #71819b; font-size: 12px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="tag">MALI · RESEARCH PROTOTYPE</div>
+    <h1>ANOS OMNI <span class="status">RSAK V1</span></h1>
+    <p class="subtitle">Laboratoire de réorganisation adaptative des connaissances</p>
+  </header>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Règles enregistrées</h2>
+      <div class="value" id="ruleCount">—</div>
+      <p class="muted">Règles dans la mémoire</p>
+    </div>
+    <div class="panel">
+      <h2>Exemples observés</h2>
+      <div class="value" id="exampleCount">—</div>
+      <p class="muted">Données mémorisées</p>
+    </div>
+    <div class="panel">
+      <h2>Propositions</h2>
+      <div class="value" id="proposalCount">—</div>
+      <p class="muted">Réorganisations enregistrées</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>01 — État de la mémoire</h2>
+    <pre id="memory">Chargement...</pre>
+    <button class="secondary" onclick="refresh()">Actualiser</button>
+    <button class="secondary" onclick="resetLab()">Réinitialiser le laboratoire</button>
+  </section>
+
+  <section class="panel">
+    <h2>02 — Validation humaine</h2>
+    <p class="muted">Examiner la proposition de réorganisation produite par le moteur.</p>
+    <pre id="proposal">Chargement...</pre>
+    <button class="primary" onclick="validate(true)">Approuver</button>
+    <button class="danger" onclick="validate(false)">Rejeter</button>
+    <p id="validationMessage" class="status"></p>
+  </section>
+
+  <section class="panel">
+    <h2>03 — Tester une connaissance</h2>
+    <p class="muted">Exemple : quatre roues et moteur présent ou absent.</p>
+    <label for="engine">Présence du moteur</label>
+    <select id="engine" style="width:100%;padding:12px;background:#080d18;color:white;border:1px solid #34435c;border-radius:7px;">
+      <option value="true">Présent</option>
+      <option value="false">Absent</option>
+      <option value="unknown">Inconnu</option>
+    </select>
+    <p><button class="primary" onclick="testQuery()">Interroger RSAK</button></p>
+    <pre id="answer">Aucune requête exécutée.</pre>
+  </section>
+
+  <footer>
+    ANOS OMNI RSAK V1 — Prototype expérimental. Les résultats affichés ne constituent pas une validation scientifique.
+  </footer>
+</main>
+
+<script>
+async function api(path, method = "GET", data = null) {
+  const options = { method, headers: {} };
+
+  if (data !== null) {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(path, options);
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Erreur du serveur");
+  }
+
+  return result;
+}
+
+async function refresh() {
+  try {
+    const state = await api("/api/state");
+
+    document.getElementById("ruleCount").textContent =
+      state.rules.length;
+
+    document.getElementById("exampleCount").textContent =
+      state.examples.length;
+
+    document.getElementById("proposalCount").textContent =
+      Object.keys(state.proposals).length;
+
+    document.getElementById("memory").textContent =
+      JSON.stringify(state, null, 2);
+
+    document.getElementById("proposal").textContent =
+      JSON.stringify(state.proposals, null, 2);
+
+  } catch (error) {
+    document.getElementById("memory").textContent =
+      "Erreur : " + error.message;
+  }
+}
+
+async function validate(approved) {
+  try {
+    const result = await api("/api/validate", "POST", { approved });
+
+    document.getElementById("validationMessage").textContent =
+      approved ? "Proposition approuvée." : "Proposition rejetée.";
+
+    await refresh();
+  } catch (error) {
+    document.getElementById("validationMessage").textContent =
+      error.message;
+  }
+}
+
+async function testQuery() {
+  try {
+    const selected = document.getElementById("engine").value;
+    const attributes = { wheels: 4 };
+
+    if (selected !== "unknown") {
+      attributes.engine = selected === "true";
+    }
+
+    const result = await api("/api/query", "POST", { attributes });
+
+    document.getElementById("answer").textContent =
+      JSON.stringify(result, null, 2);
+  } catch (error) {
+    document.getElementById("answer").textContent =
+      "Erreur : " + error.message;
+  }
+}
+
+async function resetLab() {
+  try {
+    await api("/api/reset", "POST", {});
+    document.getElementById("validationMessage").textContent =
+      "Laboratoire réinitialisé.";
+    document.getElementById("answer").textContent =
+      "Aucune requête exécutée.";
+    await refresh();
+  } catch (error) {
+    document.getElementById("validationMessage").textContent =
+      error.message;
+  }
+}
+
+refresh();
+</script>
+</body>
+</html>
