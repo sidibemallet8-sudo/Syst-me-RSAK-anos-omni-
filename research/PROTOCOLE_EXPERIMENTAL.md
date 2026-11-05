@@ -1,120 +1,80 @@
+# PROTOCOLE EXPÉRIMENTAL — ANOS OMNI RSAK V2
 
-# PROTOCOLE EXPÉRIMENTAL — ANOS OMNI RSAK V1
+## 1. Statut et objectif
 
-## 1. Objectif
+Ce protocole définit comment évaluer le prototype RSAK, un mécanisme déterministe de détection de contradictions et de proposition de partitions de règles. Il ne présume pas que RSAK est supérieur aux méthodes existantes. L'objectif est de produire des résultats reproductibles, y compris si l'hypothèse est infirmée.
 
-Évaluer la capacité du mécanisme RSAK (Réorganisation Structurelle Adaptative des Connaissances) à détecter des contradictions dans une base de règles et à proposer une réorganisation de ces règles à partir de nouveaux exemples.
+Question de recherche : **dans quels scénarios, s'il y en a, une révision de règles guidée par des contre-exemples et soumise à validation améliore-t-elle la qualité des prédictions ou leur auditabilité par rapport à des méthodes de référence ?**
 
-RSAK V1 est un prototype expérimental. Ses performances et sa contribution scientifique restent à établir.
+## 2. Hypothèses falsifiables
 
-## 2. Question de recherche
+- H1 : sur des tâches synthétiques où une variable cachée/discriminante est présente et correctement observée, RSAK peut produire une partition cohérente avec les exemples d'entraînement.
+- H2 : l'approbation d'une proposition n'améliore la performance sur données indépendantes que lorsque les attributs candidats restent pertinents dans le test.
+- H3 : l'abstention et la validation humaine réduisent certaines erreurs non résolues, au prix possible d'une couverture ou d'un coût de révision plus faible.
 
-Un système fondé sur des règles peut-il détecter qu'une règle générale devient insuffisante face à des contre-exemples, puis proposer une réorganisation de ses connaissances qui améliore ses réponses sans supprimer arbitrairement les connaissances précédentes ?
+Chaque hypothèse devra être accompagnée de critères de succès préenregistrés. Une démonstration sur un exemple construit ne suffit pas à valider ces hypothèses.
 
-## 3. Hypothèse
+## 3. Méthodes de référence
 
-Lorsqu'une règle générale rencontre des contre-exemples, RSAK peut identifier une caractéristique discriminante dans les exemples observés et proposer des règles plus spécifiques.
+Comparer, sur les mêmes partitions et données :
 
-La proposition doit être soumise à validation avant de remplacer la règle initiale.
+1. règles statiques, sans adaptation ;
+2. règle avec exception ajoutée manuellement ;
+3. révision manuelle par un opérateur selon un guide documenté ;
+4. arbre de décision standard, avec paramètres réglés uniquement sur validation ;
+5. RSAK avec propositions classées et validation ;
+6. ablations RSAK : candidat unique/non classé, absence d'explication, ou absence de validation (simulation seulement).
 
-## 4. Comportements à évaluer
+Ne pas comparer les méthodes sur des données différentes ni sélectionner après coup les cas favorables à RSAK.
 
-- Détection des contradictions.
-- Identification d'une caractéristique discriminante.
-- Génération de règles candidates.
-- Conservation de la règle précédente avant validation.
-- Réorganisation après validation.
-- Abstention lorsqu'une information nécessaire est inconnue.
-- Rejet d'une proposition sans modification injustifiée de la base.
+## 4. Jeux de données et séparation
 
-## 5. Exemple expérimental
+Commencer par des données synthétiques contrôlées avec règle génératrice connue, plusieurs attributs corrélés, valeurs manquantes, bruit d'étiquetage et différents taux de contre-exemples. Compléter ensuite par des jeux de données publics adaptés à la tâche, avec licences vérifiées.
 
-Règle initiale :
+Séparer les observations en apprentissage, validation et test indépendant. Aucun exemple de test ne doit intervenir dans la génération, le classement ou la validation des propositions. Documenter les graines aléatoires, les transformations, les critères d'exclusion et les versions.
 
-Si un objet possède quatre roues, alors il est motorisé.
+## 5. Procédure
 
-Nouveaux exemples :
+Pour chaque dataset et graine :
 
-- Objet avec quatre roues et moteur : motorisé.
-- Objet avec quatre roues sans moteur : non motorisé.
+1. créer les règles initiales uniquement à partir du protocole prédéfini ;
+2. fournir les exemples d'apprentissage et enregistrer les conflits détectés ;
+3. générer les candidats RSAK et conserver l'ensemble des propositions, scores et explications ;
+4. faire approuver/rejeter les propositions par les évaluateurs selon des critères préétablis, ou mesurer séparément l'oracle simulé ;
+5. exécuter toutes les méthodes sur le test indépendant ;
+6. répéter sur plusieurs graines, tailles de données et niveaux de bruit ;
+7. rapporter tous les scénarios, y compris les échecs et abstentions.
 
-Résultat attendu :
+Pour une évaluation humaine, définir le nombre et le profil des évaluateurs, randomiser l'ordre si possible, mesurer l'accord inter-évaluateurs et distinguer leurs décisions des résultats automatiques.
 
-Le système détecte que la règle initiale est trop générale. Il peut proposer une séparation selon la présence du moteur.
+## 6. Mesures
 
-Cette démonstration illustre le mécanisme. Elle ne constitue pas, à elle seule, une preuve de performance scientifique.
+- exactitude, précision/rappel ou F1 selon la tâche ;
+- couverture et taux d'abstention ;
+- taux de conflits non résolus ;
+- performance conditionnelle aux prédictions émises ;
+- nombre de règles, profondeur et taille des conditions ;
+- nombre de propositions, proportion acceptée et coût humain ;
+- rétention des exemples antérieurement corrects ;
+- stabilité des partitions entre graines et petits changements des données ;
+- taux de propositions invalides ou dangereuses dans les scénarios contrôlés.
 
-## 6. Méthode expérimentale
+Le `heuristic_score` actuel est un rang interne, pas une probabilité calibrée. Ne pas l'évaluer comme une confiance statistique.
 
-Les expériences devront comparer quatre approches :
+## 7. Analyse et critères
 
-1. Règles statiques : aucune modification après création.
-2. Gestion par exceptions : ajout d'exceptions aux règles existantes.
-3. Révision manuelle : modification des règles par un opérateur.
-4. RSAK : détection et proposition de réorganisation structurelle.
+Publier les résultats agrégés avec dispersion/incertitude et résultats par sous-groupe/scénario. Préenregistrer les métriques principales, les comparaisons et les exclusions. Toute conclusion de supériorité devra être limitée aux tâches, jeux et conditions étudiés et étayée par des tests indépendants.
 
-Les mêmes jeux de données devront être utilisés pour les différentes approches.
+Une proposition est considérée utile uniquement si elle améliore les critères prédéfinis sur test indépendant sans dégradation inacceptable de couverture, complexité, rétention ou sécurité. Définir les seuils avant l'expérience.
 
-## 7. Données et séparation expérimentale
+## 8. Reproductibilité et éthique
 
-Créer des jeux de données artificiels contrôlés, puis des jeux de données plus variés.
+Archiver code/version, configuration, données ou instructions d'accès, graines, règles initiales, exemples d'apprentissage, propositions, décisions humaines, métriques et environnement d'exécution. Ne pas publier de données personnelles sans base légale et protections appropriées. Documenter les biais possibles et les limites de généralisation.
 
-Séparer les exemples en :
+## 9. Sécurité robotique
 
-- Données d'apprentissage.
-- Données de validation.
-- Données de test indépendantes.
+Une expérience robotique future doit commencer en simulation, puis en environnement contrôlé avec supervision et arrêt d'urgence. RSAK ne doit pas autoriser seul la modification de règles de sécurité ou l'exécution d'actions physiques. Exiger validation indépendante, contraintes de sécurité non modifiables par RSAK et analyse de risques avant tout essai matériel.
 
-Les exemples de test ne doivent pas être utilisés pour construire ou modifier les règles.
+## 10. Limites et statut
 
-## 8. Indicateurs de mesure
-
-Mesurer :
-
-- Exactitude : proportion de réponses correctes.
-- Couverture : proportion de questions auxquelles le système répond.
-- Abstention : proportion de questions sans réponse certaine.
-- Contradictions non résolues : conflits restant dans la base.
-- Nombre de règles : taille de la base après adaptation.
-- Coût de révision : nombre de modifications nécessaires.
-- Rétention : capacité à conserver les connaissances utiles après réorganisation.
-
-## 9. Conditions de validation
-
-Une proposition de réorganisation ne sera considérée comme utile que si elle :
-
-- réduit les erreurs sur des données indépendantes ;
-- ne provoque pas une augmentation excessive de la complexité ;
-- conserve les connaissances qui restent valides ;
-- respecte le mécanisme de validation humaine prévu.
-
-## 10. Reproductibilité
-
-Chaque expérience devra enregistrer :
-
-- La version du programme.
-- Les données utilisées.
-- Les règles initiales.
-- Les exemples ajoutés.
-- Les propositions produites.
-- Les décisions de validation.
-- Les résultats obtenus.
-
-Les expériences devront être répétées sur plusieurs jeux de données.
-
-## 11. Limites actuelles
-
-RSAK V1 ne démontre pas encore :
-
-- Une intelligence générale.
-- Un apprentissage autonome comparable à celui d'un grand modèle neuronal.
-- Une supériorité sur les méthodes existantes.
-- Une robustesse sur des données réelles à grande échelle.
-
-Ces points nécessitent des expériences et des comparaisons supplémentaires.
-
-## 12. Conclusion
-
-RSAK V1 constitue une première implémentation expérimentale d'un mécanisme de détection de contradictions et de proposition de réorganisation des règles.
-
-La prochaine étape scientifique consiste à exécuter le protocole, mesurer les résultats et comparer le système à des approches de référence.
+RSAK V2 reste un prototype à règles exactes. Il ne démontre pas l'intelligence générale, l'apprentissage autonome à grande échelle, la supériorité sur les modèles de langage ni la sûreté robotique. Les résultats restent à établir par les expériences ci-dessus.
