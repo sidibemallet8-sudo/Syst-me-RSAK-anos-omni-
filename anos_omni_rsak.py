@@ -1,7 +1,7 @@
 
 """ANOS OMNI — RSAK V1
 Réorganisation Structurelle Adaptative des Connaissances.
-Prototype expérimental autonome, sans dépendance externe.
+Prototype expérimental autonome.
 """
 
 from dataclasses import dataclass, asdict
@@ -50,7 +50,6 @@ class AnosOmniRSAK:
         }
 
         self.examples.append(example)
-
         conflicts = []
 
         for rule in self.rules.values():
@@ -89,7 +88,7 @@ class AnosOmniRSAK:
                 "reason": "Insufficient knowledge"
             }
 
-        conclusions = {r.conclusion for r in matched}
+        conclusions = {rule.conclusion for rule in matched}
 
         if len(conclusions) > 1:
             return {
@@ -100,11 +99,14 @@ class AnosOmniRSAK:
         return {
             "status": "ANSWER",
             "answer": matched[0].conclusion,
-            "rules": [r.id for r in matched]
+            "rules": [rule.id for rule in matched]
         }
 
     def propose_reorganization(self, rule_id):
         rule = self.rules[rule_id]
+
+        if rule.status != "active":
+            return None
 
         relevant = [
             ex for ex in self.examples
@@ -122,44 +124,57 @@ class AnosOmniRSAK:
             keys.update(ex["attributes"].keys())
 
         for key in sorted(keys):
+
+            # Tous les exemples doivent posséder cet attribut.
+            if not all(key in ex["attributes"] for ex in relevant):
+                continue
+
             groups = {}
 
             for ex in relevant:
-                attrs = ex["attributes"]
+                value = ex["attributes"][key]
 
-                if key not in attrs:
-                    continue
+                value_id = json.dumps(
+                    {
+                        "type": type(value).__name__,
+                        "value": value
+                    },
+                    sort_keys=True,
+                    ensure_ascii=False
+                )
 
-                value = str(attrs[key])
-                groups.setdefault(value, set()).add(
+                if value_id not in groups:
+                    groups[value_id] = {
+                        "value": value,
+                        "conclusions": set()
+                    }
+
+                groups[value_id]["conclusions"].add(
                     ex["conclusion"]
                 )
 
             if len(groups) < 2:
                 continue
 
-            if not all(len(values) == 1
-                       for values in groups.values()):
+            if not all(
+                len(group["conclusions"]) == 1
+                for group in groups.values()
+            ):
                 continue
-
-            self.counter += 1
-            proposal_id = f"P{self.counter:03d}"
 
             children = []
 
-            for ex in relevant:
-                value = ex["attributes"].get(key)
-
-                child = {
+            for group in groups.values():
+                children.append({
                     "conditions": {
                         **rule.conditions,
-                        key: value
+                        key: group["value"]
                     },
-                    "conclusion": ex["conclusion"]
-                }
+                    "conclusion": next(iter(group["conclusions"]))
+                })
 
-                if child not in children:
-                    children.append(child)
+            self.counter += 1
+            proposal_id = f"P{self.counter:03d}"
 
             proposal = {
                 "id": proposal_id,
@@ -170,7 +185,6 @@ class AnosOmniRSAK:
             }
 
             self.proposals[proposal_id] = proposal
-
             self.log("REORGANIZATION_PROPOSED", proposal)
 
             return proposal
@@ -199,7 +213,6 @@ class AnosOmniRSAK:
                 )
 
             proposal["status"] = "APPROVED"
-
         else:
             proposal["status"] = "REJECTED"
 
@@ -236,66 +249,42 @@ def demonstration():
 
     print("\n=== ANOS OMNI RSAK V1 ===")
 
-    # 1. Initial knowledge
-    rule = ai.add_rule(
-        {"wheels": 4},
-        "motorized"
-    )
+    rule = ai.add_rule({"wheels": 4}, "motorized")
 
-    print("\nInitial rule:", rule)
-
-    # 2. Supporting example
     ai.add_example(
         {"wheels": 4, "engine": True},
         "motorized"
     )
 
-    # 3. Counterexample
     conflicts = ai.add_example(
         {"wheels": 4, "engine": False},
         "not_motorized"
     )
 
-    print("\nDetected counterexamples:", conflicts)
+    print("\nContradictions détectées :", conflicts)
 
-    # 4. Reorganization proposal
     proposal = ai.propose_reorganization(rule)
 
-    print("\nReorganization proposal:")
-    print(json.dumps(proposal, indent=2))
+    print("\nProposition :")
+    print(json.dumps(proposal, indent=2, ensure_ascii=False))
 
-    # 5. Human validation
     if proposal:
-        print("\nHuman validation: APPROVED")
-
+        print("\nValidation simulée : APPROVED")
         ai.validate(proposal["id"], True)
 
-    # 6. New queries
-    print("\nQuery: four wheels, engine present")
+    print("\nMoteur présent :")
+    print(ai.query({"wheels": 4, "engine": True}))
 
-    print(ai.query({
-        "wheels": 4,
-        "engine": True
-    }))
+    print("\nMoteur absent :")
+    print(ai.query({"wheels": 4, "engine": False}))
 
-    print("\nQuery: four wheels, engine absent")
+    print("\nMoteur inconnu :")
+    print(ai.query({"wheels": 4}))
 
-    print(ai.query({
-        "wheels": 4,
-        "engine": False
-    }))
-
-    print("\nQuery: four wheels, engine unknown")
-
-    print(ai.query({
-        "wheels": 4
-    }))
-
-    # 7. Save memory
     ai.save()
 
-    print("\nMemory saved.")
-    print("=== DEMONSTRATION COMPLETE ===")
+    print("\nMémoire sauvegardée.")
+    print("=== DÉMONSTRATION TERMINÉE ===")
 
 
 if __name__ == "__main__":
