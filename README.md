@@ -1,4 +1,4 @@
-
+ 
 # ANOS OMNI — RSAK V1
 
 ### Réorganisation Structurelle Adaptative des Connaissances
@@ -7,22 +7,21 @@
 
 ## 1. Présentation
 
-ANOS OMNI RSAK est un prototype expérimental qui étudie une approche de gestion adaptative des connaissances.
+ANOS OMNI RSAK est un prototype expérimental consacré à la gestion adaptative des connaissances par règles.
 
-Son objectif est de permettre à un système fondé sur des règles de détecter des contre-exemples, d'analyser les contradictions et de proposer une réorganisation de ses connaissances.
-
-Les modifications importantes nécessitent une validation humaine.
+Le système cherche à détecter les contre-exemples, analyser les contradictions et proposer une réorganisation des règles. Les modifications structurelles nécessitent une validation humaine.
 
 ## 2. Fonctionnalités
 
 - Apprentissage incrémental à partir d'exemples.
-- Mémorisation des règles.
+- Mémorisation des règles et des connaissances.
 - Détection des contre-exemples.
 - Proposition de réorganisation structurelle.
 - Validation ou rejet humain.
 - Conservation de l'historique.
 - Abstention lorsque les informations sont insuffisantes.
-- Sauvegarde des connaissances au format JSON.
+- Sauvegarde JSON.
+- Interface web de laboratoire.
 
 ## 3. Architecture
 
@@ -30,66 +29,94 @@ Les modifications importantes nécessitent une validation humaine.
 ANOS OMNI RSAK V1
 │
 ├── anos_omni_rsak.py
-│   └── Moteur principal RSAK
-│
 ├── test_rsak.py
-│   └── Tests automatiques
-│
+├── run_demo.py
+├── lab_server.py
+├── requirements.txt
+├── .gitignore
 ├── README.md
-│   └── Documentation
-│
-└── anos_memory.json
-    └── Mémoire générée à l'exécution
+├── research/
+│   └── PROTOCOLE_EXPERIMENTAL.md
+└── interface/
+    └── index.html
 ```
 
-## 4. Installation
+## 4. Prérequis
 
-Python 3.10 ou supérieur recommandé.
+- Python 3.10 ou supérieur recommandé.
+- Aucune bibliothèque externe nécessaire.
+- Navigateur web moderne pour le laboratoire.
 
-Aucune bibliothèque externe n'est nécessaire.
+## 5. Démonstration en terminal
 
-## 5. Exécution
+```bash
+python run_demo.py
+```
 
-Lancer la démonstration :
+Ou :
 
 ```bash
 python anos_omni_rsak.py
 ```
 
-Lancer les tests :
+## 6. Lancer le laboratoire web
+
+Depuis le dossier du projet :
+
+```bash
+python lab_server.py
+```
+
+Puis ouvrir :
+
+```text
+http://127.0.0.1:8000
+```
+
+L'interface permet de consulter la mémoire, examiner la proposition, approuver ou rejeter une réorganisation et tester des requêtes.
+
+Le serveur est local : il doit rester lancé pendant l'utilisation de l'interface.
+
+## 7. Tests automatiques
 
 ```bash
 python -m unittest test_rsak -v
 ```
 
-## 6. Principe expérimental
+## 8. Exemple de fonctionnement
 
-Exemple :
-
-Une première règle affirme :
+Règle initiale :
 
 `wheels = 4 → motorized`
 
-Le système reçoit ensuite un contre-exemple :
+Contre-exemple :
 
 `wheels = 4, engine = false → not_motorized`
 
-Il détecte la contradiction et propose une séparation selon la présence du moteur.
+Le système détecte une contradiction et peut proposer une séparation selon la présence du moteur.
 
-La réorganisation n'est appliquée qu'après validation humaine.
+La réorganisation est appliquée uniquement après validation.
 
-## 7. Statut scientifique
+## 9. Protocole scientifique
 
-RSAK V1 est un prototype de recherche préliminaire.
+Le protocole expérimental se trouve dans :
 
-Les performances, la nouveauté scientifique et la généralisation de la méthode restent à évaluer par des expériences reproductibles et des comparaisons avec des méthodes de référence.
+`research/PROTOCOLE_EXPERIMENTAL.md`
 
-## 8. Auteur
+Il définit les hypothèses, les approches de comparaison, les indicateurs et les conditions de validation.
+
+## 10. Limites scientifiques
+
+RSAK V1 est un prototype préliminaire.
+
+Sa nouveauté scientifique, ses performances et sa capacité de généralisation ne sont pas encore démontrées. Des expériences reproductibles et des comparaisons avec des méthodes de référence sont nécessaires.
+
+## 11. Auteur
 
 Malet Sidibé
 
-Projet de recherche développé au Mali.
+Projet développé au Mali.
 
-## 9. Licence
+## 12. Licence
 
 À définir.
