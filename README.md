@@ -2,113 +2,79 @@
 
 ## Vision scientifique
 
-**RSAK (Réorganisation Structurelle Adaptative des Connaissances)** est un prototype de recherche sur la révision contrôlée de connaissances symboliques. Il étudie une question limitée et testable : lorsqu'une règle rencontre des contre-exemples, peut-on détecter le conflit, proposer des partitions explicables des exemples et soumettre ces révisions à une validation explicite ?
+**ANOS OMNI RSAK (Réorganisation Structurelle Adaptative des Connaissances)** est un prototype de recherche sur la révision explicable de connaissances symboliques. Il étudie une question précise : lorsqu'une règle rencontre des contre-exemples, peut-on détecter le conflit, proposer une partition plus précise et conserver le contrôle humain sur la modification ?
 
-À long terme, cette approche pourrait être étudiée comme une couche complémentaire de mémoire et de contrôle pour des systèmes d'IA ou de robotique. **RSAK n'est pas aujourd'hui un modèle de langage, un système robotique, ni un remplacement démontré de ChatGPT, DeepSeek ou d'autres modèles.** La version actuelle manipule des règles structurées et des exemples fournis explicitement.
+> **Hypothèse de recherche :** dans des tâches contrôlées de classification symbolique, le classement de propositions par gain d'information et couverture peut aider à produire des révisions de règles plus explicables que l'ajout manuel non structuré d'exceptions, sans dégrader les résultats sur des données de test indépendantes.
 
-## Contribution proposée (à évaluer, pas à revendiquer comme acquise)
+Cette hypothèse reste à tester. RSAK V2 est un prototype expérimental : il ne constitue pas un modèle de langage, un système général d'intelligence, un contrôleur robotique, ni un remplacement démontré de ChatGPT, DeepSeek ou d'autres systèmes. La vision à long terme est d'étudier RSAK comme une possible couche de mémoire et de révision auditable pouvant compléter des systèmes d'IA, sous des garanties et évaluations adaptées.
 
-Le projet propose d'expérimenter un cycle de révision auditable :
+## Contribution proposée (à valider expérimentalement)
 
-1. représenter des règles explicites et leurs conditions ;
-2. enregistrer des exemples étiquetés et détecter les désaccords avec les règles actives ;
-3. chercher plusieurs attributs observés qui séparent les conclusions ;
-4. classer les partitions candidates par un score heuristique transparent ;
-5. expliquer la proposition et préserver l'état initial jusqu'à validation humaine ;
-6. conserver les propositions, décisions et résultats dans un historique et un snapshot JSON.
+Le prototype réunit un cycle de révision explicite :
 
-Le score de classement **n'est ni une probabilité ni une mesure de confiance**. Une séparation parfaite sur les exemples mémorisés ne démontre pas la généralisation à de nouvelles données.
+1. représenter des connaissances par des règles conditionnelles ;
+2. enregistrer des exemples et signaler les règles contradictoires ;
+3. générer des attributs candidats, les classer par gain d'information empirique pondéré par la couverture ;
+4. fournir les exemples justificatifs et les règles candidates ;
+5. attendre une décision explicite avant d'archiver la règle parente et d'activer les règles filles ;
+6. conserver un historique et permettre la sauvegarde/reprise de l'état.
 
-## Fonctionnalités V2
+La nouveauté scientifique n'est pas revendiquée comme établie. La contribution éventuelle devra être déterminée par une revue de littérature, des comparaisons de référence, des résultats reproductibles et une analyse des limites.
 
-- Moteur Python sans dépendances externes.
-- Règles à conditions exactes, conclusions symboliques et archivage des parents révisés.
-- Détection et journalisation des exemples contradictoires.
-- Réponses `ANSWER`, `CONFLICT` ou `ABSTENTION`, avec identifiants des règles explicatives.
-- Génération de plusieurs propositions candidates, triées de façon déterministe.
-- Justification textuelle, support observé et composantes du score heuristique.
-- Validation ou rejet explicite ; rejet sans modification de la règle parent.
-- Validation d'entrées et refus des identifiants inconnus.
-- Sauvegarde JSON atomique et rechargement avec version de schéma.
+## Architecture
 
-## Démarrage
+- `anos_omni_rsak.py` : moteur symbolique, détection de conflits, requête avec abstention/conflit, classement des révisions, validation humaine et persistance JSON.
+- `test_rsak.py` : tests unitaires des cas fonctionnels et des erreurs.
+- `run_demo.py` : démonstration terminale (utilise la démonstration du module principal).
+- `lab_server.py` et `interface/index.html` : laboratoire web local existant.
+- `research/PROTOCOLE_EXPERIMENTAL.md` : protocole de validation proposé.
 
-Prérequis : Python 3.10+.
+## Installation et exécution
+
+Prérequis : Python 3.10+ ; aucune dépendance externe nécessaire.
 
 ```bash
-python run_demo.py
 python -m unittest test_rsak -v
+python anos_omni_rsak.py
+```
+
+Pour le laboratoire web local :
+
+```bash
 python lab_server.py
 ```
 
-Le laboratoire web est accessible localement à `http://127.0.0.1:8000`.
+Puis ouvrir `http://127.0.0.1:8000`. Le serveur est conçu pour un usage local de démonstration, pas pour être exposé sur Internet.
 
-## Exemple conceptuel
+## Exemple
 
-Règle générale : `wheels = 4 → motorized`.
+Règle initiale : `wheels = 4 → motorized`.
 
-Exemples observés :
+Deux observations :
 
 - `wheels = 4, engine = true → motorized`
 - `wheels = 4, engine = false → not_motorized`
 
-RSAK peut proposer une partition selon `engine`. L'humain décide si la proposition doit être appliquée. Cet exemple illustre le mécanisme ; il ne constitue pas une preuve de performance ou de nouveauté scientifique.
+Le moteur peut proposer une séparation selon `engine`, avec les exemples justificatifs, la couverture et le gain d'information. Une proposition n'est pas une vérité : l'opérateur doit l'examiner et valider ou rejeter. Après validation, une requête sans valeur de `engine` s'abstient plutôt que d'inventer une conclusion.
 
-## API minimale du moteur
+## Limites et sécurité
 
-```python
-from anos_omni_rsak import AnosOmniRSAK
+- Les attributs et conclusions sont symboliques et doivent être fournis sous forme structurée ; aucune compréhension de texte libre n'est implémentée.
+- Le score est un outil heuristique de classement, pas une probabilité ni une mesure de confiance calibrée.
+- Une proposition peut surapprendre les exemples observés ; il faut l'évaluer sur des données indépendantes.
+- Les règles sont simples ; le moteur ne gère pas causalité, logique temporelle, incertitude probabiliste ou contraintes complexes.
+- Le prototype n'est pas certifié pour la santé, la finance, la sécurité ou le contrôle d'un robot. Ne pas connecter ses décisions à des actions physiques critiques.
+- L'historique JSON n'est pas une base sécurisée multi-utilisateur ; ne pas y stocker de données sensibles.
 
-engine = AnosOmniRSAK()
-rule_id = engine.add_rule({"wheels": 4}, "motorized")
-engine.add_example({"wheels": 4, "engine": True}, "motorized")
-engine.add_example({"wheels": 4, "engine": False}, "not_motorized")
+## Feuille de route
 
-candidates = engine.propose_reorganizations(rule_id)
-# Examiner la justification puis décider explicitement :
-if candidates:
-    engine.validate(candidates[0]["id"], approved=True)
+1. établir une revue de littérature et définir précisément la contribution par rapport aux systèmes de révision de règles existants ;
+2. créer des jeux synthétiques reproductibles avec bruit, attributs manquants et dérive de concept ;
+3. comparer RSAK à des règles statiques, une approche par exceptions et une révision manuelle, avec séparation apprentissage/validation/test ;
+4. mesurer exactitude, couverture, abstention, conflits non résolus, nombre de règles, coût de révision et stabilité ;
+5. publier les données, scripts, versions et résultats, y compris les résultats négatifs ;
+6. seulement ensuite étudier l'intégration comme couche consultative d'un assistant ou d'un robot en simulation, avec garde-fous indépendants.
 
-print(engine.query({"wheels": 4, "engine": False}))
-engine.save("anos_memory.json")
-```
+## Auteur et statut
 
-`propose_reorganization(rule_id)` reste disponible pour obtenir uniquement le candidat le mieux classé.
-
-## Limites actuelles et sécurité
-
-- Les conditions sont des égalités exactes sur des attributs JSON ; il n'y a pas de compréhension du langage naturel, de perception ou de raisonnement probabiliste.
-- Les exemples et attributs sont supposés fiables et correctement étiquetés. Le système n'est pas résistant au bruit, aux biais ou aux données adversariales.
-- Le score sert uniquement à ordonner des candidats construits à partir des données observées. Il ne garantit ni précision future ni sûreté.
-- Les exemples de faible taille peuvent produire des règles surajustées.
-- L'historique est en mémoire ; le snapshot JSON n'est pas chiffré ni conçu pour des données sensibles ou un usage multi-utilisateur.
-- Le serveur du laboratoire est une démonstration locale, pas une API de production.
-- Ne pas connecter ce prototype à un robot réel ni à une décision critique sans analyse de risques, simulation, garde-fous indépendants et validation experte.
-
-## Feuille de route de recherche
-
-1. **Formaliser** les définitions de conflit, pertinence d'exemple et qualité de partition.
-2. **Comparer** RSAK à des règles statiques, exceptions, révision manuelle et méthodes standard d'arbres de décision.
-3. **Séparer** apprentissage, réglage et test indépendant ; répéter les expériences avec graines et jeux de données publiés.
-4. **Mesurer** exactitude, couverture, abstention, contradictions résiduelles, complexité (nombre de règles), coût de révision, stabilité et rétention des règles utiles.
-5. **Tester les ablations** : sans classement, sans validation humaine, un seul candidat, et différentes tailles/bruits de données.
-6. **Évaluer les risques** d'étiquettes erronées, données contradictoires, valeurs manquantes et propositions dangereuses avant toute intégration robotique.
-7. **Publier les résultats négatifs aussi**, les jeux de données, scripts, versions et limites afin de rendre l'étude reproductible.
-
-Une contribution scientifique pourra être revendiquée seulement après comparaison reproductible, analyse des limites et examen par la communauté. À ce stade, RSAK est un prototype et un programme expérimental.
-
-## Structure
-
-```text
-anos_omni_rsak.py                 Moteur symbolique
-run_demo.py                       Démonstration terminal
-lab_server.py                     Serveur local de démonstration
-interface/index.html              Interface du laboratoire
-test_rsak.py                      Tests unitaires
-research/PROTOCOLE_EXPERIMENTAL.md Protocole reproductible
-```
-
-## Auteur et licence
-
-Malet Sidibé — projet de recherche développé au Mali.
-Licence à définir.
+Projet de recherche expérimental développé au Mali par Malet Sidibé. Licence à définir. Les résultats scientifiques restent à établir.
